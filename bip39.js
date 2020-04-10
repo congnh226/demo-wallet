@@ -1,5 +1,3 @@
-const randomBytes = require('random-bytes');
-const createHash = require('create-hash');
 const crypto = require('crypto');
 const wordList = require('./wordlist.json');
 
@@ -8,20 +6,17 @@ const wordList = require('./wordlist.json');
         /**
          * 1. Generate Entropy
          */
-        const bytes = await randomBytes.sync(16); // 16 bytes = 128 bits 
+        const bytes = crypto.randomBytes(16); // 16 bytes = 128 bits 
         const entropy = Buffer.from(bytes, 'hex');        
         const entropyBits = bytesToBinary(Array.from(entropy)); //convert bytes to a string of bits (base 2)
-        // const entropyBits = "10000101100010010010111001000110111101100111011100000101111111111011110000011000110110111101000010111101100010101000000100110001";
         console.log('entropyBits', entropyBits);
-
-        //10000101100010010010111001000110111101100111011100000101111111111011110000011000110110111101000010111101100010101000000100110001
 
         /**
          * 2. Entropy to Mnemonic
          */
         // 2.1. Add checksum
         const size = entropyBits.length / 32; // number of bits to take from hash of entropy (1 bit checksum for every 32 bits entropy)
-        const sha256 = createHash('sha256').update(entropy).digest(); // hash of entropy (in raw binary)
+        const sha256 = crypto.createHash('sha256').update(entropy).digest(); // hash of entropy (in raw binary)
         const checksum = bytesToBinary(Array.from(sha256)).slice(0, size); // take 1 bit for every 32 bits of entropy       
         console.log('checksum', checksum);
 
@@ -38,13 +33,13 @@ const wordList = require('./wordlist.json');
             return wordList[index]; 
         });
         
-        const mnemonic = sentence.join(' ');
+        const mnemonic = sentence.join(' '); // merge to string
         console.log('mnemonic:', mnemonic); 
 
         /**
          * 3. Menomic to Seed
          */
-        const passphrase = '';
+        const passphrase = ''; //optional
         const salt = 'mnemonic' + passphrase; // "mnemonic" is always used in the salt with optional passphrase appended to it
 
         crypto.pbkdf2(Buffer.from(mnemonic, 'utf8'), Buffer.from(salt, 'utf8'), 2048, 64, 'sha512', (error, res) => {
